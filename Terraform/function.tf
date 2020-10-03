@@ -26,3 +26,18 @@ resource "azurerm_function_app" "functionapp" {
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key
 }
+
+# Get the master key for use in the Logic app
+resource "azurerm_template_deployment" "functionappkeydeployment" {
+  deployment_mode = "Incremental"
+  name = "function-keys-01"
+  resource_group_name = azurerm_resource_group.rg.name
+  
+  template_body = file("../arm/list-function-keys-deploy.json")
+  
+  parameters = {
+    "functionApp" = azurerm_function_app.functionapp.name
+  }
+  
+  depends_on = [ azurerm_function_app.functionapp ]
+}
