@@ -18,7 +18,7 @@ namespace RandomTeamGenerator
     {
         [FunctionName("GenerateTeams")]
         public static async Task<IActionResult> RunAsync(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)]
+            [HttpTrigger(AuthorizationLevel.Admin, "get", Route = null)]
             HttpRequest req, ExecutionContext context, ILogger log)
         {
             log.LogInformation("GenerateTeams HTTP Trigger received a request.");

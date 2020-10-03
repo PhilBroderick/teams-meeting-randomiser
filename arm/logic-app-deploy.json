@@ -1,0 +1,247 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "logicAppName": {
+            "type": "string"
+        },
+        "resourceGroup": {
+            "type": "string"
+        },
+        "subscriptionId": {
+            "type": "string"
+        },
+        "location" : {
+            "type": "string"
+        },
+        "functionAppUrl": {
+            "type": "string"
+        },
+        "functionAppKey" : {
+            "type": "string"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Web/connections",
+            "apiVersion": "2016-06-01",
+            "name": "teams",
+            "location": "[parameters('location')]",
+            "kind": "V1",
+            "properties": {
+                "displayName": "teams-connection",
+                "customParameterValues": {},
+                "api": {
+                    "id": "[concat('/subscriptions/', parameters('subscriptionId'), '/providers/Microsoft.Web/locations/', parameters('location') ,'/managedApis/teams')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Logic/workflows",
+            "apiVersion": "2017-07-01",
+            "name": "[parameters('logicAppName')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "teams"
+            ],
+            "properties": {
+                "state": "Disabled",
+                "definition": {
+                    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {
+                        "$connections": {
+                            "defaultValue": {},
+                            "type": "Object"
+                        }
+                    },
+                    "triggers": {
+                        "HTTP": {
+                            "recurrence": {
+                                "frequency": "Minute",
+                                "interval": 1
+                            },
+                            "type": "Http",
+                            "inputs": {
+                                "headers": {
+                                    "x-functions-key": "[parameters('functionAppKey')]"
+                                },
+                                "method": "GET",
+                                "uri": "concat[(parameters('functionAppUrl)', '/api/GenerateTeams')]"
+                            }
+                        }
+                    },
+                    "actions": {
+                        "For_each_2": {
+                            "foreach": "@body('Parse_JSON')",
+                            "actions": {
+                                "Create_a_Teams_meeting": {
+                                    "runAfter": {
+                                        "Set_variable_2": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "ApiConnection",
+                                    "inputs": {
+                                        "body": {
+                                            "body": {
+                                                "content": "@variables('currentTeamString')",
+                                                "contentType": "html"
+                                            },
+                                            "end": {
+                                                "dateTime": "@{addMinutes(addHours(startOfDay(string(addDays(utcNow(),2))), 14), 30)}"
+                                            },
+                                            "isOnlineMeeting": true,
+                                            "onlineMeetingProvider": "teamsForBusiness",
+                                            "optionalAttendees": "",
+                                            "start": {
+                                                "dateTime": "@{addHours(startOfDay(string(addDays(utcNow(),2))), 14)}"
+                                            },
+                                            "subject": "Wednesday Coffee",
+                                            "timeZone": "GMT Standard Time"
+                                        },
+                                        "host": {
+                                            "connection": {
+                                                "name": "@parameters('$connections')['teams']['connectionId']"
+                                            }
+                                        },
+                                        "method": "post",
+                                        "path": "/v1.0/me/calendars/@{encodeURIComponent('Calendar')}/events"
+                                    }
+                                },
+                                "For_each": {
+                                    "foreach": "@items('For_each_2')",
+                                    "actions": {
+                                        "Append_to_array_variable": {
+                                            "runAfter": {},
+                                            "type": "AppendToArrayVariable",
+                                            "inputs": {
+                                                "name": "currentTeam",
+                                                "value": "@items('For_each')"
+                                            }
+                                        }
+                                    },
+                                    "runAfter": {},
+                                    "type": "Foreach",
+                                    "runtimeConfiguration": {
+                                        "concurrency": {
+                                            "repetitions": 1
+                                        }
+                                    }
+                                },
+                                "Join": {
+                                    "runAfter": {
+                                        "For_each": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "Join",
+                                    "inputs": {
+                                        "from": "@variables('currentTeam')",
+                                        "joinWith": ";"
+                                    }
+                                },
+                                "Set_variable": {
+                                    "runAfter": {
+                                        "Create_a_Teams_meeting": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "SetVariable",
+                                    "inputs": {
+                                        "name": "currentTeam",
+                                        "value": []
+                                    }
+                                },
+                                "Set_variable_2": {
+                                    "runAfter": {
+                                        "Join": [
+                                            "Succeeded"
+                                        ]
+                                    },
+                                    "type": "SetVariable",
+                                    "inputs": {
+                                        "name": "currentTeamString",
+                                        "value": "@body('Join')"
+                                    }
+                                }
+                            },
+                            "runAfter": {
+                                "Initialize_variable_2": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "Foreach",
+                            "runtimeConfiguration": {
+                                "concurrency": {
+                                    "repetitions": 1
+                                }
+                            }
+                        },
+                        "Initialize_variable": {
+                            "runAfter": {
+                                "Parse_JSON": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "currentTeam",
+                                        "type": "array"
+                                    }
+                                ]
+                            }
+                        },
+                        "Initialize_variable_2": {
+                            "runAfter": {
+                                "Initialize_variable": [
+                                    "Succeeded"
+                                ]
+                            },
+                            "type": "InitializeVariable",
+                            "inputs": {
+                                "variables": [
+                                    {
+                                        "name": "currentTeamString",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "Parse_JSON": {
+                            "runAfter": {},
+                            "type": "ParseJson",
+                            "inputs": {
+                                "content": "@triggerBody()",
+                                "schema": {
+                                    "items": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    },
+                                    "type": "array"
+                                }
+                            }
+                        }
+                    },
+                    "outputs": {}
+                },
+                "parameters": {
+                    "$connections": {
+                        "value": {
+                            "teams": {
+                                "connectionId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('resourceGroup') ,'/providers/Microsoft.Web/connections/teams')]",
+                                "connectionName": "teams",
+                                "id": "[concat('/subscriptsion', parameters('subscriptionId'),'/providers/Microsoft.Web/locations/uksouth/managedApis/teams']"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
