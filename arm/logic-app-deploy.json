@@ -236,7 +236,7 @@
                             "teams": {
                                 "connectionId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('resourceGroup') ,'/providers/Microsoft.Web/connections/teams')]",
                                 "connectionName": "teams",
-                                "id": "[concat('/subscriptsion', parameters('subscriptionId'),'/providers/Microsoft.Web/locations/uksouth/managedApis/teams']"
+                                "id": "[concat('/subscriptions/', parameters('subscriptionId'),'/providers/Microsoft.Web/locations/uksouth/managedApis/teams']"
                             }
                         }
                     }
