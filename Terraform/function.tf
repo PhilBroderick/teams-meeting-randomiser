@@ -28,12 +28,32 @@ resource "azurerm_function_app" "functionapp" {
 }
 
 # Get the master key for use in the Logic app
-resource "azurerm_template_deployment" "functionappkeydeployment" {
+resource "azurerm_template_deployment" "functionkey" {
   deployment_mode = "Incremental"
-  name = "function-keys-01"
+  name = "functionkeys-01"
   resource_group_name = azurerm_resource_group.rg.name
   
-  template_body = file("../arm/list-function-keys-deploy.json")
+  template_body = <<DEPLOY
+  {
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "functionApp": {
+        "type": "string"
+      }
+    },
+    "variables": {
+      "functionAppId": "[resourceId('Microsoft.Web/sites', parameters('functionApp'))]"
+    },
+    "resources": [],
+    "outputs": {
+      "functionKey": {
+        "type": "string",
+        "value": "[listkeys(concat(variables('functionAppId'), '/host/default'), '2018-11-01').functionKeys.default]"
+      }
+    }
+  }
+  DEPLOY
   
   parameters = {
     "functionApp" = azurerm_function_app.functionapp.name
