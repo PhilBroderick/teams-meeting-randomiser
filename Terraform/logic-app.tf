@@ -12,6 +12,6 @@ resource "azurerm_template_deployment" "logicappdeployment" {
     "logicAppName"       = var.logic_app_name
     "subscriptionId"     = var.subscription_id
     "functionAppUrl"     = azurerm_function_app.functionapp.default_hostname
-    "functionAppKey"     = lookup(azurerm_template_deployment.functionappkeydeployment.outputs, "functionkey")
+    "functionAppKey"     = lookup(azurerm_template_deployment.functionkey.outputs, "functionKey")
   }
 }

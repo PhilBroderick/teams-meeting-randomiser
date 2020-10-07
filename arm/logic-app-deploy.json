@@ -68,7 +68,7 @@
                                     "x-functions-key": "[parameters('functionAppKey')]"
                                 },
                                 "method": "GET",
-                                "uri": "concat[(parameters('functionAppUrl)', '/api/GenerateTeams')]"
+                                "uri": "[concat('https://',parameters('functionAppUrl'), '/api/GenerateTeams')]"
                             }
                         }
                     },
@@ -236,7 +236,7 @@
                             "teams": {
                                 "connectionId": "[concat('/subscriptions/', parameters('subscriptionId'), '/resourceGroups/', parameters('resourceGroup') ,'/providers/Microsoft.Web/connections/teams')]",
                                 "connectionName": "teams",
-                                "id": "[concat('/subscriptions/', parameters('subscriptionId'),'/providers/Microsoft.Web/locations/uksouth/managedApis/teams']"
+                                "id": "[concat('/subscriptions/', parameters('subscriptionId'),'/providers/Microsoft.Web/locations/uksouth/managedApis/teams')]"
                             }
                         }
                     }
