@@ -1,0 +1,43 @@
+name: 'Terraform deploy to Azure'
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./Terraform
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+        working-directory: ${{env.working-directory}}
+
+    - name: Terraform Init
+      run: terraform init
+      working-directory: ${{env.working-directory}}
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      run: terraform fmt -check
+      working-directory: ${{env.working-directory}}
+
+
+    - name: Terraform Plan
+      run: terraform plan      
+      working-directory: ${{env.working-directory}}
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      run: terraform apply -auto-approve
+      working-directory: ${{env.working-directory}}
