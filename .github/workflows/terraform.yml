@@ -27,12 +27,6 @@ jobs:
       run: terraform init
       working-directory: ${{env.working-directory}}
 
-    # Checks that all Terraform configuration files adhere to a canonical format
-    - name: Terraform Format
-      run: terraform fmt -check
-      working-directory: ${{env.working-directory}}
-
-
     - name: Terraform Plan
       run: terraform plan      
       working-directory: ${{env.working-directory}}
